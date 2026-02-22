@@ -3,16 +3,12 @@ import requests
 
 app = Flask(__name__)
 
-# API Proxy Target
 BASE_URL = "https://hrdyckorclwpeyorzpry.supabase.co/functions/v1/api-proxy"
-
-# Header Browser Terkini
 HEADERS = {
-    "User-Agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1",
-    "Accept": "application/json"
+    "User-Agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1"
 }
 
-# --- UI LAYOUT PREMIUM ---
+# --- UI LAYOUT DENGAN VIDEO.JS & BOTTOM NAV ---
 BASE_LAYOUT = """
 <!DOCTYPE html>
 <html lang="id">
@@ -22,61 +18,82 @@ BASE_LAYOUT = """
     <title>ALBEDONEXT</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link href="https://vjs.zencdn.net/8.10.0/video-js.css" rel="stylesheet" />
     <style>
-        body { background-color: #05070a; color: #afb3b8; font-family: 'Plus Jakarta Sans', sans-serif; -webkit-tap-highlight-color: transparent; }
-        .nav-glass { background: rgba(5, 7, 10, 0.8); backdrop-filter: blur(20px); border-bottom: 1px solid rgba(255,255,255,0.05); }
-        .drama-card img { transition: transform 0.5s ease; border-radius: 12px; }
-        .drama-card:hover img { transform: scale(1.03); }
-        .btn-rose { background: #e11d48; color: white; transition: all 0.3s ease; border-radius: 8px; font-weight: 600; }
-        .btn-rose:hover { background: #be123c; transform: translateY(-1px); }
-        .video-container { width: 100%; max-width: 400px; margin: auto; aspect-ratio: 9/16; background: #000; border-radius: 16px; overflow: hidden; box-shadow: 0 20px 50px rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.1); }
-        input::placeholder { color: #4b5563; }
-        .episode-grid a { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.05); transition: 0.2s; }
-        .episode-grid a:hover { background: #e11d48; border-color: #e11d48; color: white; }
+        body { background-color: #000; color: #fff; font-family: 'Plus Jakarta Sans', sans-serif; }
+        .vjs-theme-city .vjs-big-play-button { border: none; background-color: #e11d48; }
+        .video-container { width: 100vw; height: calc(100vh - 70px); position: relative; background: #000; }
+        .bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; height: 70px; background: rgba(10,10,10,0.95); backdrop-filter: blur(10px); display: flex; justify-content: space-around; items-center: center; border-top: 1px solid rgba(255,255,255,0.1); z-index: 100; }
+        .nav-item { display: flex; flex-direction: column; align-items: center; font-size: 10px; color: #666; font-weight: 600; }
+        .nav-item.active { color: #e11d48; }
+        .nav-item svg { width: 24px; height: 24px; margin-bottom: 4px; }
+        /* Make Video Full */
+        .video-js { width: 100% !important; height: 100% !important; }
+        .drama-card { border-radius: 12px; overflow: hidden; background: #111; border: 1px solid #222; }
     </style>
 </head>
-<body class="pb-10">
-    <nav class="nav-glass sticky top-0 p-4 flex justify-between items-center z-50">
-        <a href="/" class="text-lg font-bold tracking-tighter text-white">ALBEDO<span class="text-rose-600">NEXT</span></a>
-        <form action="/search" method="GET" class="flex bg-white/5 rounded-lg px-3 py-1 border border-white/10">
-            <input type="text" name="q" placeholder="Cari drama..." class="bg-transparent border-none outline-none text-xs w-28 md:w-56 text-white py-1">
-            <button type="submit" class="text-xs">🔍</button>
-        </form>
-    </nav>
+<body class="pb-[80px]">
 
-    <main class="max-w-5xl mx-auto p-4 md:p-6">
+    <main id="main-content">
         {{ content | safe }}
     </main>
 
-    <script>
-        // ANTI-EXIT LOGIC
-        (function() {
-            window.history.pushState(null, null, window.location.pathname);
-            window.addEventListener('popstate', function () {
-                if (window.location.pathname.includes('/watch/')) {
-                    if(confirm("Kembali ke daftar episode?")) {
-                        window.location.href = document.getElementById('btn-back-link')?.href || "/";
-                    } else {
-                        window.history.pushState(null, null, window.location.pathname);
-                    }
-                } else if (window.location.pathname !== "/") {
-                    window.location.href = "/";
-                } else {
-                    window.history.pushState(null, null, window.location.pathname);
-                }
-            });
-        })();
+    <div class="bottom-nav">
+        <a href="/" class="nav-item active">
+            <svg fill="currentColor" viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+            Home
+        </a>
+        <button onclick="window.history.back()" class="nav-item">
+            <svg fill="currentColor" viewBox="0 0 24 24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>
+            Back
+        </button>
+        <a href="/favorites" class="nav-item">
+            <svg fill="currentColor" viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+            Favorite
+        </a>
+        <a href="/history" class="nav-item">
+            <svg fill="currentColor" viewBox="0 0 24 24"><path d="M13 3a9 9 0 0 0-9 9H1l3.89 3.89.07.14L9 12H6a7 7 0 1 1 7 7 7.07 7.07 0 0 1-6-3.15L5.45 17.4A9 9 0 1 0 13 3z"/></svg>
+            History
+        </a>
+    </div>
 
-        // AUTO-NEXT LOGIC
+    <script src="https://vjs.zencdn.net/8.10.0/video.min.js"></script>
+    <script>
+        // HISTORY & FAVORITE LOGIC
+        function saveHistory(id, name, img) {
+            let history = JSON.parse(localStorage.getItem('albedo_history') || '[]');
+            history = history.filter(item => item.id !== id);
+            history.unshift({id, name, img, time: new Date().getTime()});
+            localStorage.setItem('albedo_history', JSON.stringify(history.slice(0, 20)));
+        }
+
+        function toggleFavorite(id, name, img) {
+            let favs = JSON.parse(localStorage.getItem('albedo_favs') || '[]');
+            const index = favs.findIndex(item => item.id === id);
+            if(index > -1) {
+                favs.splice(index, 1);
+                alert("Dihapus dari Favorit");
+            } else {
+                favs.push({id, name, img});
+                alert("Ditambah ke Favorit");
+            }
+            localStorage.setItem('albedo_favs', JSON.stringify(favs));
+        }
+
+        // AUTO-NEXT & PLAYER INITIALIZATION
         document.addEventListener('DOMContentLoaded', () => {
-            const player = document.getElementById('main-player');
-            if (player) {
-                player.onended = () => {
-                    const next = document.getElementById('next-btn-link');
-                    if (next) {
-                        setTimeout(() => { window.location.href = next.href; }, 1000);
-                    }
-                };
+            const videoEl = document.querySelector('.video-js');
+            if (videoEl) {
+                const player = videojs(videoEl, {
+                    fluid: false,
+                    autoplay: true,
+                    playbackRates: [0.5, 1, 1.5, 2]
+                });
+                
+                player.on('ended', () => {
+                    const nextBtn = document.getElementById('next-btn');
+                    if(nextBtn) window.location.href = nextBtn.href;
+                });
             }
         });
     </script>
@@ -90,24 +107,15 @@ def home():
     res = requests.get(f"{BASE_URL}?path=%2Fnetshort%2Fforyou&page={page}", headers=HEADERS).json()
     items = res.get('data', {}).get('contentInfos', [])
     
-    html = '<h2 class="text-sm font-bold tracking-widest text-slate-500 mb-6 uppercase">Rekomendasi Terkini</h2>'
-    html += '<div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4 md:gap-6">'
+    html = '<div class="p-4"><h1 class="text-xl font-bold mb-4 text-rose-500 italic">ALBEDONEXT</h1>'
+    html += '<div class="grid grid-cols-2 md:grid-cols-5 gap-3">'
     for i in items:
         html += f'''
-        <a href="/drama/{i['shortPlayId']}" class="drama-card group block">
-            <div class="overflow-hidden rounded-xl bg-white/5 border border-white/5">
-                <img src="{i['shortPlayCover']}" class="w-full aspect-[3/4] object-cover">
-            </div>
-            <h3 class="text-xs font-semibold text-white mt-3 truncate group-hover:text-rose-500">{i['shortPlayName']}</h3>
-            <p class="text-[10px] text-slate-600 mt-1 italic">{i.get('heatScoreShow', 'Trending')}</p>
+        <a href="/drama/{i['shortPlayId']}" class="drama-card block">
+            <img src="{i['shortPlayCover']}" class="w-full aspect-[3/4] object-cover">
+            <div class="p-2 truncate text-[11px] font-bold">{i['shortPlayName']}</div>
         </a>'''
-    html += '</div>'
-    html += f'''
-    <div class="mt-12 flex justify-center items-center gap-6">
-        {"<a href='/?page="+str(page-1)+"' class='text-xs font-bold hover:text-white'>PREV</a>" if page > 1 else ""}
-        <span class="text-[10px] bg-white/5 px-3 py-1 rounded border border-white/10 uppercase tracking-widest">Hal {page}</span>
-        <a href="/?page={page+1}" class="btn-rose px-6 py-2 text-xs">NEXT PAGE</a>
-    </div>'''
+    html += f'</div><a href="/?page={page+1}" class="block text-center bg-rose-600 p-3 mt-6 rounded-xl font-bold text-sm">LIHAT LAGI</a></div>'
     return render_template_string(BASE_LAYOUT, content=html)
 
 @app.route('/drama/<id>')
@@ -116,22 +124,18 @@ def detail(id):
     data = res.get('data', {})
     
     html = f'''
-    <div class="flex flex-col md:flex-row gap-6 md:gap-10 mb-10">
-        <img src="{data.get('shortPlayCover')}" class="w-40 md:w-52 mx-auto md:mx-0 rounded-2xl shadow-2xl border border-white/10">
-        <div class="flex-1 text-center md:text-left pt-2">
-            <h1 class="text-xl md:text-2xl font-bold text-white mb-4 tracking-tight">{data.get('shortPlayName')}</h1>
-            <p class="text-xs text-slate-500 leading-relaxed max-w-2xl mx-auto md:mx-0">{data.get('shotIntroduce', '')}</p>
-            <div class="mt-6 flex flex-wrap justify-center md:justify-start gap-2">
-                {" ".join([f'<span class="text-[9px] border border-white/10 px-2 py-1 rounded text-slate-400 font-bold uppercase tracking-tighter">{l}</span>' for l in data.get('shortPlayLabels', [])])}
+    <div class="p-4">
+        <div class="flex gap-4 mb-6">
+            <img src="{data['shortPlayCover']}" class="w-32 rounded-lg shadow-lg">
+            <div>
+                <h1 class="text-lg font-bold">{data['shortPlayName']}</h1>
+                <button onclick="toggleFavorite('{id}', '{data['shortPlayName']}', '{data['shortPlayCover']}')" class="mt-2 text-xs bg-white/10 px-3 py-1 rounded-full border border-white/20">❤️ Tambah Favorit</button>
             </div>
         </div>
-    </div>
-    <div class="border-t border-white/5 pt-8">
-        <h3 class="text-xs font-bold text-rose-500 mb-6 uppercase tracking-widest">Pilih Episode</h3>
-        <div class="grid grid-cols-5 sm:grid-cols-8 md:grid-cols-12 gap-2 episode-grid">
+        <div class="grid grid-cols-5 gap-2">
     '''
     for e in data.get('shortPlayEpisodeInfos', []):
-        html += f'<a href="/watch/{id}/{e["episodeNo"]}" class="aspect-square flex items-center justify-center rounded-lg text-xs font-bold">{e["episodeNo"]}</a>'
+        html += f'<a href="/watch/{id}/{e["episodeNo"]}" class="bg-white/5 py-3 text-center rounded-lg text-sm border border-white/5">{e["episodeNo"]}</a>'
     html += '</div></div>'
     return render_template_string(BASE_LAYOUT, content=html)
 
@@ -145,40 +149,74 @@ def watch(id, no):
     if not curr: return "Not Found", 404
     sub = curr['subtitleList'][0]['url'] if curr.get('subtitleList') else ""
 
+    # Pemicu simpan history di client-side
+    save_script = f"<script>saveHistory('{id}', '{data['shortPlayName']}', '{data['shortPlayCover']}')</script>"
+    
     html = f'''
-    <div class="max-w-md mx-auto">
-        <div class="video-container">
-            <video id="main-player" controls autoplay playsinline>
-                <source src="{curr['playVoucher']}" type="video/mp4">
-                <track label="Indonesia" kind="subtitles" src="{sub}" default>
-            </video>
+    <div class="video-container">
+        <video id="my-video" class="video-js vjs-theme-city vjs-big-play-centered" controls preload="auto" playsinline>
+            <source src="{curr['playVoucher']}" type="video/mp4">
+            <track label="Indonesia" kind="subtitles" src="{sub}" default>
+        </video>
+        <div class="absolute bottom-10 right-4 flex flex-col gap-4 z-50">
+            {f'<a id="next-btn" href="/watch/{id}/{no+1}" class="bg-rose-600 p-4 rounded-full shadow-lg">▶</a>' if no < data.get('totalEpisode', 0) else ''}
+            <a href="/drama/{id}" class="bg-white/20 p-4 rounded-full backdrop-blur-md">☰</a>
         </div>
-        <div class="mt-8 bg-white/5 p-4 rounded-xl border border-white/10 flex justify-between items-center">
-            <a id="btn-back-link" href="/drama/{id}" class="text-[10px] font-bold text-slate-500 hover:text-white uppercase">Daftar Episode</a>
-            <div class="flex items-center gap-3">
-                {f'<a href="/watch/{id}/{no-1}" class="text-xs font-bold px-3 py-1 border border-white/10 rounded">PREV</a>' if no > 1 else ''}
-                <span class="text-xs font-bold text-white px-2 italic">Eps {no}</span>
-                {f'<a id="next-btn-link" href="/watch/{id}/{no+1}" class="btn-rose px-5 py-1 text-xs uppercase">Next</a>' if no < data.get('totalEpisode', 0) else ''}
-            </div>
-        </div>
-        <p class="text-center text-[9px] text-slate-600 mt-6 uppercase tracking-[0.2em]">Auto-Next Episode Active</p>
+        <div class="absolute top-4 left-4 z-50 bg-black/40 px-3 py-1 rounded text-[10px] font-bold">EPS {no} / {data['totalEpisode']}</div>
     </div>
+    {save_script}
     '''
     return render_template_string(BASE_LAYOUT, content=html)
+
+@app.route('/history')
+def history():
+    return render_template_string(BASE_LAYOUT, content='''
+    <div class="p-4">
+        <h1 class="text-xl font-bold mb-6 text-rose-500 italic">RIWAYAT NONTON</h1>
+        <div id="history-list" class="grid grid-cols-2 gap-3"></div>
+    </div>
+    <script>
+        const hist = JSON.parse(localStorage.getItem('albedo_history') || '[]');
+        const container = document.getElementById('history-list');
+        if(hist.length === 0) container.innerHTML = '<p class="text-xs text-gray-500 col-span-2">Belum ada riwayat.</p>';
+        hist.forEach(item => {
+            container.innerHTML += `
+            <a href="/drama/${item.id}" class="drama-card block">
+                <img src="${item.img}" class="w-full aspect-[3/4] object-cover">
+                <div class="p-2 truncate text-[11px] font-bold">${item.name}</div>
+            </a>`;
+        });
+    </script>
+    ''')
+
+@app.route('/favorites')
+def favorites():
+    return render_template_string(BASE_LAYOUT, content='''
+    <div class="p-4">
+        <h1 class="text-xl font-bold mb-6 text-rose-500 italic">FAVORIT SAYA</h1>
+        <div id="fav-list" class="grid grid-cols-2 gap-3"></div>
+    </div>
+    <script>
+        const favs = JSON.parse(localStorage.getItem('albedo_favs') || '[]');
+        const container = document.getElementById('fav-list');
+        if(favs.length === 0) container.innerHTML = '<p class="text-xs text-gray-500 col-span-2">Belum ada favorit.</p>';
+        favs.forEach(item => {
+            container.innerHTML += `
+            <a href="/drama/${item.id}" class="drama-card block">
+                <img src="${item.img}" class="w-full aspect-[3/4] object-cover">
+                <div class="p-2 truncate text-[11px] font-bold">${item.name}</div>
+            </a>`;
+        });
+    </script>
+    ''')
 
 @app.route('/search')
 def search():
     q = request.args.get('q', '')
     res = requests.get(f"{BASE_URL}?path=%2Fnetshort%2Fsearch&query={q}", headers=HEADERS).json()
     items = res.get('data', {}).get('searchCodeSearchResult', [])
-    
-    html = f'<h2 class="text-xs font-bold text-slate-500 mb-8 uppercase tracking-widest">Hasil Pencarian: <span class="text-white italic">"{q}"</span></h2>'
-    html += '<div class="grid grid-cols-2 md:grid-cols-5 gap-6">'
+    html = f'<div class="p-4"><h2 class="text-xs font-bold mb-4 uppercase">Hasil: {q}</h2><div class="grid grid-cols-2 gap-3">'
     for i in items:
-        html += f'''
-        <a href="/drama/{i['shortPlayId']}" class="drama-card block">
-            <img src="{i['shortPlayCover']}" class="w-full aspect-[3/4] object-cover rounded-xl border border-white/5 shadow-lg">
-            <h3 class="text-xs font-bold text-white mt-3 truncate">{i['shortPlayName']}</h3>
-        </a>'''
-    html += '</div>'
+        html += f'<a href="/drama/{i["shortPlayId"]}" class="drama-card block"><img src="{i["shortPlayCover"]}" class="w-full aspect-[3/4] object-cover"><div class="p-2 truncate text-[10px] font-bold">{i["shortPlayName"]}</div></a>'
+    html += '</div></div>'
     return render_template_string(BASE_LAYOUT, content=html)
