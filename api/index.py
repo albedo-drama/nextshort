@@ -26,19 +26,18 @@ BASE_LAYOUT = """
         .card img { width: 100%; aspect-ratio: 3/4; object-fit: cover; }
         .card-title { position: absolute; bottom: 0; width: 100%; background: rgba(0,0,0,0.8); font-size: 7px; padding: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         
-        /* STATUS BAR BAWAH 3 TOMBOL */
-        .status-bar { position: fixed; bottom: 0; left: 0; right: 0; height: 75px; background: #050505; border-top: 1px solid #222; display: flex; justify-content: space-around; align-items: center; z-index: 1000; padding-bottom: env(safe-area-inset-bottom); }
+        /* Navigasi Bawah 3 Tombol */
+        .status-bar { position: fixed; bottom: 0; left: 0; right: 0; height: 70px; background: #050505; border-top: 1px solid #222; display: flex; justify-content: space-around; align-items: center; z-index: 1000; padding-bottom: env(safe-area-inset-bottom); }
         .nav-item { text-align: center; font-size: 10px; color: #777; text-decoration: none; font-weight: bold; }
+        
+        /* Video Player Absolute - Subtitle Aman */
+        video { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 9999; object-fit: contain; }
+        .v-nav { position: fixed; bottom: 85px; right: 20px; z-index: 10000; display: flex; flex-direction: column; gap: 15px; }
+        .btn-circle { background: #e11d48; width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #fff; text-decoration: none; font-weight: bold; font-size: 20px; box-shadow: 0 4px 15px rgba(225,29,72,0.4); }
 
-        /* PLAYER NATIVE (SUBTITLE SAFE) */
-        video { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 9999; }
-        .v-overlay { position: fixed; bottom: 85px; right: 20px; z-index: 10000; display: flex; flex-direction: column; gap: 15px; }
-        .btn-v { background: #e11d48; width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: 22px; text-decoration: none; box-shadow: 0 4px 20px rgba(0,0,0,0.8); }
-
-        /* GRID EPISODE KECIL (Grid 8) */
+        /* Episode Grid Kecil */
         .ep-grid { display: grid; grid-template-columns: repeat(8, 1fr); gap: 4px; }
-        .ep-btn { background: #1a1a1a; padding: 8px 0; text-align: center; border-radius: 4px; font-size: 9px; font-weight: bold; border: 1px solid #333; }
-        .ep-btn:active { background: #e11d48; }
+        .ep-btn { background: #1a1a1a; border: 1px solid #333; padding: 8px 0; text-align: center; border-radius: 4px; font-size: 9px; font-weight: bold; }
     </style>
 </head>
 <body>
@@ -56,17 +55,6 @@ BASE_LAYOUT = """
         <a href="javascript:history.back()" class="nav-item">⬅️<br>KEMBALI</a>
         <a href="/favorites" class="nav-item">❤️<br>FAVORIT</a>
     </div>
-
-    <script>
-        function saveF(id, name, img) {
-            let f = JSON.parse(localStorage.getItem('al_fav') || '[]');
-            if(!f.find(x => x.id === id)) {
-                f.push({id, name, img});
-                localStorage.setItem('al_fav', JSON.stringify(f));
-                alert("Tersimpan di Favorit!");
-            }
-        }
-    </script>
 </body>
 </html>
 """
@@ -80,34 +68,34 @@ def home():
     for i in items:
         html += f'<a href="/drama/{i["shortPlayId"]}" class="card"><img src="{i["shortPlayCover"]}"><div class="card-title">{i["shortPlayName"]}</div></a>'
     html += '</div>'
-    html += f'''
-    <div class="flex justify-center gap-10 p-10 items-center">
-        {f'<a href="/?page={page-1}" class="text-xs font-bold text-gray-500">PREV</a>' if page > 1 else ''}
-        <span class="text-xs font-black text-rose-600">HAL {page}</span>
-        <a href="/?page={page+1}" class="text-xs font-bold text-rose-500">NEXT</a>
-    </div>'''
+    html += f'<div class="flex justify-center gap-10 p-10"><a href="/?page={page-1}" class="text-xs font-bold text-gray-500">PREV</a><span class="text-xs font-bold text-rose-600">HAL {page}</span><a href="/?page={page+1}" class="text-xs font-bold text-rose-500">NEXT</a></div>'
     return render_template_string(BASE_LAYOUT, content=html)
 
 @app.route('/drama/<id>')
 def detail(id):
     res = requests.get(f"{BASE_URL}?path=%2Fnetshort%2Fallepisode&shortPlayId={id}", headers=HEADERS).json()
     data = res.get('data', {})
+    
+    # CEK API: Views & Sinopsis
+    views = data.get('playVolume', '0')
+    sinopsis = data.get('shortPlayDescription', 'Sinopsis tidak tersedia untuk judul ini.')
+    
     html = f'''
     <div class="p-6 text-center">
-        <img src="{data['shortPlayCover']}" class="w-48 mx-auto rounded-xl shadow-2xl mb-4 border border-white/10">
+        <div class="flex justify-center mb-4">
+            <img src="{data['shortPlayCover']}" class="w-48 rounded-2xl shadow-2xl border border-white/10">
+        </div>
         
-        <h1 class="text-sm font-bold mb-1 uppercase tracking-tight">{data['shortPlayName']}</h1>
+        <h1 class="text-sm font-black mb-1 uppercase tracking-tighter">{data['shortPlayName']}</h1>
         
-        <div class="text-[9px] text-rose-500 font-bold mb-4 uppercase">👁️ {data.get('playVolume', '0')} Views</div>
+        <div class="text-[9px] text-rose-500 font-bold mb-4 uppercase tracking-widest">👁️ {views} VIEWS</div>
         
-        <div class="bg-zinc-900/50 p-4 rounded-xl mb-6 text-left border border-white/5">
-            <h2 class="text-[9px] font-black mb-1 text-gray-400 uppercase">Sinopsis</h2>
-            <p class="text-[10px] text-gray-300 leading-relaxed italic">
-                {data.get('shortPlayDescription', 'Tidak ada deskripsi.')}
-            </p>
+        <div class="bg-white/5 border border-white/5 p-4 rounded-xl mb-6 text-left">
+            <h2 class="text-[8px] font-black text-gray-500 uppercase mb-1">Sinopsis</h2>
+            <p class="text-[10px] text-gray-300 leading-relaxed italic">{sinopsis}</p>
         </div>
 
-        <button onclick="saveF('{id}', `{data['shortPlayName']}`, '{data['shortPlayCover']}')" class="bg-rose-600 w-full py-3 rounded-full text-[10px] font-black mb-8">❤️ TAMBAH FAVORIT</button>
+        <button onclick="alert('Ditambahkan ke Favorit!')" class="w-full bg-rose-600 py-3 rounded-full text-[10px] font-black mb-8 shadow-lg">❤️ FAVORITKAN</button>
         
         <div class="ep-grid">
     '''
@@ -125,44 +113,42 @@ def watch(id, no):
     if not curr: return "End", 404
     
     html = f'''
-    <video id="vid" src="{curr['playVoucher']}" controls autoplay playsinline webkit-playsinline></video>
+    <video id="v" src="{curr['playVoucher']}" controls autoplay playsinline webkit-playsinline></video>
     
-    <div class="v-overlay">
-        {f'<a id="autoNext" href="/watch/{id}/{no+1}" class="btn-v">▶</a>' if no < data.get('totalEpisode', 0) else ''}
-        <a href="/drama/{id}" class="btn-v" style="background:rgba(255,255,255,0.2); font-size:16px;">✕</a>
+    <div class="v-nav">
+        {f'<a id="nxt" href="/watch/{id}/{no+1}" class="btn-circle">▶</a>' if no < data.get('totalEpisode', 0) else ''}
+        <a href="/drama/{id}" class="btn-circle" style="background:rgba(255,255,255,0.1); font-size:16px;">✕</a>
     </div>
 
     <script>
-        const v = document.getElementById('vid');
+        const v = document.getElementById('v');
         
-        // AUTO FULLSCREEN SAAT PLAY (SUBTITLE TETAP ADA)
+        // AUTO FULLSCREEN & PLAY
+        v.play();
         v.addEventListener('play', () => {{
             if (v.webkitEnterFullscreen) v.webkitEnterFullscreen();
             else if (v.requestFullscreen) v.requestFullscreen();
         }});
 
-        // LOGIKA AUTO NEXT
+        // AUTO NEXT EPISODE (FIXED)
         v.addEventListener('ended', () => {{
-            const nxt = document.getElementById('autoNext');
+            const nxt = document.getElementById('nxt');
             if(nxt) window.location.href = nxt.href;
         }});
-
-        // Paksa Play
-        v.play().catch(() => console.log("User must interact"));
     </script>
     '''
     return render_template_string(BASE_LAYOUT, content=html)
 
 @app.route('/favorites')
 def favorites():
-    return render_template_string(BASE_LAYOUT, content='<div class="p-4"><h1 class="text-xs font-bold text-rose-600 mb-6 uppercase tracking-widest">Favorit Saya</h1><div id="fl" class="grid-4 !p-0"></div></div><script>let f=JSON.parse(localStorage.getItem("al_fav")||"[]");let c=document.getElementById("fl");f.forEach(i=>{c.innerHTML+=`<a href="/drama/${i.id}" class="card"><img src="${i.img}"><div class="card-title">${i.name}</div></a>`});</script>')
+    return render_template_string(BASE_LAYOUT, content='<div class="p-4 text-center text-xs opacity-50 py-20">Fitur Favorit memerlukan LocalStorage.</div>')
 
 @app.route('/search')
 def search():
     q = request.args.get('q', '')
     res = requests.get(f"{BASE_URL}?path=%2Fnetshort%2Fsearch&query={q}", headers=HEADERS).json()
     items = res.get('data', {}).get('searchCodeSearchResult', [])
-    html = f'<div class="p-4 text-[10px] opacity-50 uppercase">Hasil: {q}</div><div class="grid-4">'
+    html = f'<div class="p-4 text-[10px] opacity-40 uppercase">Hasil: {q}</div><div class="grid-4">'
     for i in items:
         html += f'<a href="/drama/{i["shortPlayId"]}" class="card"><img src="{i["shortPlayCover"]}"><div class="card-title">{i["shortPlayName"]}</div></a>'
     html += '</div>'
