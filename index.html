@@ -6,14 +6,15 @@
     <title>ALBEDONEXT-SHORT</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        /* Sembunyikan scrollbar agar tampilan lebih bersih */
         ::-webkit-scrollbar { width: 0px; }
         body { background-color: #0f172a; color: #ffffff; }
         .glass-panel { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(10px); }
         .line-clamp-2 { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
     </style>
 </head>
-<body class="pb-20"> <header class="glass-panel sticky top-0 z-40 border-b border-slate-700 p-4 shadow-lg">
+<body class="pb-20">
+
+    <header class="glass-panel sticky top-0 z-40 border-b border-slate-700 p-4 shadow-lg">
         <div class="max-w-5xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-3">
             <h1 class="text-2xl font-black bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-500">
                 ALBEDONEXT-SHORT
@@ -37,7 +38,7 @@
         <section id="view-home" class="view-section">
             <h2 class="text-xl font-bold mb-4 border-l-4 border-blue-500 pl-2">Rekomendasi / Foryou</h2>
             <div id="homeGrid" class="grid grid-cols-2 md:grid-cols-4 gap-4"></div>
-            <div class="flex justify-center gap-4 mt-8">
+            <div class="flex justify-center items-center gap-4 mt-8">
                 <button onclick="prevPage()" class="bg-slate-700 hover:bg-slate-600 px-6 py-2 rounded-lg font-bold transition-all">⏪ Prev</button>
                 <span id="pageIndicator" class="px-4 py-2 bg-slate-800 rounded-lg font-bold text-blue-400">1</span>
                 <button onclick="nextPage()" class="bg-blue-600 hover:bg-blue-500 px-6 py-2 rounded-lg font-bold transition-all">Next ⏩</button>
@@ -72,7 +73,7 @@
 
         <section id="view-player" class="view-section hidden flex flex-col bg-black rounded-xl overflow-hidden shadow-2xl border border-slate-700" style="height: calc(100vh - 12rem);">
             <div class="bg-slate-900 p-3 flex justify-between items-center">
-                <h3 id="playerTitle" class="font-bold text-blue-400"></h3>
+                <h3 id="playerTitle" class="font-bold text-blue-400 truncate w-3/4"></h3>
                 <span class="text-xs text-slate-400 bg-slate-800 px-2 py-1 rounded">Auto-Next Aktif</span>
             </div>
             <video id="videoPlayer" controls playsinline class="w-full h-full bg-black" style="object-fit: contain;"></video>
@@ -98,29 +99,17 @@
     </nav>
 
     <script>
-        const API_PROXY = "https://hrdyckorclwpeyorzpry.supabase.co/functions/v1/api-proxy?path=";
-        
-        // Setup Header Request dengan User-Agent agar tidak diblokir backend aslinya
-        const reqOptions = {
-            method: 'GET',
-            headers: {
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-                'X-Requested-With': 'XMLHttpRequest'
-            }
-        };
+        // KODE REFERRAL (Ubah di sini sesuai kebutuhan)
+        const REFERRAL_CODE = "KODE_REFERRAL_KAMU_DISINI";
 
-        // State Management
         let currentPage = 1;
         let viewHistory = ['home'];
         let currentEpisodes = [];
         let currentEpIndex = 0;
         let currentDramaData = null;
 
-        // Inisialisasi awal
         document.addEventListener("DOMContentLoaded", () => {
             loadHome();
-            
-            // Auto Next Handler
             const video = document.getElementById('videoPlayer');
             video.addEventListener('ended', () => {
                 if (currentEpIndex < currentEpisodes.length - 1) {
@@ -129,67 +118,45 @@
             });
         });
 
-        function showLoading(show) {
-            document.getElementById('loading').style.display = show ? 'block' : 'none';
-        }
+        function showLoading(show) { document.getElementById('loading').style.display = show ? 'block' : 'none'; }
 
-        // Navigation Router
         function navigateTo(view) {
             document.querySelectorAll('.view-section').forEach(el => el.classList.add('hidden'));
             document.getElementById(`view-${view}`).classList.remove('hidden');
-            
-            // Simpan history untuk tombol kembali
-            if (viewHistory[viewHistory.length - 1] !== view) {
-                viewHistory.push(view);
-            }
-            
-            // Pause video jika keluar dari player
-            if (view !== 'player') {
-                document.getElementById('videoPlayer').pause();
-            }
+            if (viewHistory[viewHistory.length - 1] !== view) viewHistory.push(view);
+            if (view !== 'player') document.getElementById('videoPlayer').pause();
         }
 
         function goBack() {
             if (viewHistory.length > 1) {
-                viewHistory.pop(); // Hapus current
-                const prevView = viewHistory[viewHistory.length - 1]; // Ambil prev
+                viewHistory.pop();
+                const prevView = viewHistory[viewHistory.length - 1];
                 document.querySelectorAll('.view-section').forEach(el => el.classList.add('hidden'));
                 document.getElementById(`view-${prevView}`).classList.remove('hidden');
-                
-                if (prevView !== 'player') {
-                    document.getElementById('videoPlayer').pause();
-                }
+                if (prevView !== 'player') document.getElementById('videoPlayer').pause();
             } else {
                 goHome();
             }
         }
 
-        function goHome() {
-            viewHistory = ['home'];
-            navigateTo('home');
-        }
-
+        function goHome() { viewHistory = ['home']; navigateTo('home'); }
         function goFavorites() {
             let favs = JSON.parse(localStorage.getItem('albedonext_favs') || '[]');
             renderGrid(favs, 'favGrid');
             navigateTo('favorites');
         }
 
-        // Templating Grid 4
         function renderGrid(dataArray, containerId) {
             const container = document.getElementById(containerId);
             container.innerHTML = '';
-            
             if (!dataArray || dataArray.length === 0) {
                 container.innerHTML = '<p class="col-span-full text-center text-slate-400">Data tidak ditemukan.</p>';
                 return;
             }
-
             dataArray.forEach(item => {
                 const cover = item.shortPlayCover || item.groupShortPlayCover;
                 const title = item.shortPlayName;
                 const id = item.shortPlayId;
-
                 const card = document.createElement('div');
                 card.className = "bg-slate-800 rounded-xl overflow-hidden shadow-lg cursor-pointer transform hover:scale-105 transition-all border border-slate-700 group";
                 card.onclick = () => openDetail(id);
@@ -206,123 +173,86 @@
             });
         }
 
-        // Fetch Home
+        async function fetchViaVercel(endpointPath) {
+            const supabaseUrl = `https://hrdyckorclwpeyorzpry.supabase.co/functions/v1/api-proxy?path=${encodeURIComponent(endpointPath)}`;
+            const vercelApiUrl = `/api/proxy?url=${encodeURIComponent(supabaseUrl)}`;
+            const res = await fetch(vercelApiUrl);
+            return await res.json();
+        }
+
         async function loadHome() {
             showLoading(true);
             try {
-                // Endpoint Foryou berdasarkan teks TXT
-                const url = `${API_PROXY}${encodeURIComponent('/netshort/foryou&page=' + currentPage)}`;
-                const res = await fetch(url, reqOptions);
-                const json = await res.json();
-                
-                // Parser menyesuaikan nested object pada respon API
+                // Bisa pakai /netshort/theaters?page= atau /netshort/foryou?page= sesuai ketersediaan endpoint
+                const json = await fetchViaVercel(`/netshort/theaters?page=${currentPage}`);
                 let list = [];
-                if (json.data && json.data.contentInfos) {
-                    list = json.data.contentInfos;
-                } else if (json.data && Array.isArray(json.data)) {
-                    // Fallback apabila pakai theathers
-                    list = json.data[0].contentInfos || json.data; 
-                }
+                if (json.data && json.data.contentInfos) list = json.data.contentInfos;
+                else if (json.data && Array.isArray(json.data)) list = json.data[0].contentInfos || json.data; 
                 
                 renderGrid(list, 'homeGrid');
                 document.getElementById('pageIndicator').innerText = currentPage;
-            } catch (e) {
-                console.error("Gagal load home:", e);
-            }
+            } catch (e) { console.error(e); }
             showLoading(false);
         }
 
         function nextPage() { currentPage++; loadHome(); }
         function prevPage() { if (currentPage > 1) { currentPage--; loadHome(); } }
 
-        // Fetch Search
         async function searchDrama() {
             const query = document.getElementById('searchInput').value.trim();
             if (!query) return;
-            
             showLoading(true);
             navigateTo('search');
             try {
-                const url = `${API_PROXY}${encodeURIComponent('/netshort/search?query=' + query)}`;
-                const res = await fetch(url, reqOptions);
-                const json = await res.json();
+                const json = await fetchViaVercel(`/netshort/search?query=${query}`);
                 renderGrid(json.data.searchCodeSearchResult || [], 'searchGrid');
-            } catch (e) {
-                console.error("Gagal search:", e);
-            }
+            } catch (e) { console.error(e); }
             showLoading(false);
         }
 
-        // Fetch Detail
         async function openDetail(shortPlayId) {
             showLoading(true);
             navigateTo('detail');
             try {
-                const url = `${API_PROXY}${encodeURIComponent('/netshort/allepisode&shortPlayId=' + shortPlayId)}`;
-                const res = await fetch(url, reqOptions);
-                const json = await res.json();
-                
+                const json = await fetchViaVercel(`/netshort/allepisode?shortPlayId=${shortPlayId}`);
                 currentDramaData = json.data;
                 currentEpisodes = json.data.shortPlayEpisodeInfos;
 
-                // Render Info
                 document.getElementById('detailCover').src = currentDramaData.shortPlayCover;
                 document.getElementById('detailTitle').innerText = currentDramaData.shortPlayName;
-                document.getElementById('detailSynopsis').innerText = currentDramaData.shotIntroduce || "Sinopsis tidak tersedia untuk drama ini.";
-                
+                document.getElementById('detailSynopsis').innerText = currentDramaData.shotIntroduce || "Sinopsis tidak tersedia.";
                 refreshFavButton();
 
-                // Render Grid Episode (Grid 8)
                 const epGrid = document.getElementById('episodesGrid');
                 epGrid.innerHTML = '';
                 currentEpisodes.forEach((ep, idx) => {
                     const btn = document.createElement('button');
-                    // Styling tombol kecil
                     btn.className = "bg-slate-700 hover:bg-blue-600 text-white text-xs font-bold py-2 rounded border border-slate-600 transition-colors";
                     btn.innerText = ep.episodeNo;
                     btn.onclick = () => playEpisode(idx);
                     epGrid.appendChild(btn);
                 });
-
-            } catch (e) {
-                console.error("Gagal load detail:", e);
-            }
+            } catch (e) { console.error(e); }
             showLoading(false);
         }
 
-        // Player Logic
         function playEpisode(index) {
             if (!currentEpisodes || index >= currentEpisodes.length) return;
-            
             currentEpIndex = index;
             navigateTo('player');
-            
             const ep = currentEpisodes[index];
             const video = document.getElementById('videoPlayer');
-            
-            document.getElementById('playerTitle').innerText = `${currentDramaData.shortPlayName} - Episode ${ep.episodeNo}`;
-            
-            video.src = ep.playVoucher; // Ini adalah link .mp4 dari json
+            document.getElementById('playerTitle').innerText = `${currentDramaData.shortPlayName} - Ep ${ep.episodeNo}`;
+            video.src = ep.playVoucher; 
             video.play();
         }
 
-        // Favorites Logic
         function toggleFavoriteCurrent() {
             if (!currentDramaData) return;
-            
             let favs = JSON.parse(localStorage.getItem('albedonext_favs') || '[]');
             const existsIndex = favs.findIndex(f => f.shortPlayId === currentDramaData.shortPlayId);
-            
-            if (existsIndex > -1) {
-                favs.splice(existsIndex, 1);
-            } else {
-                favs.push({
-                    shortPlayId: currentDramaData.shortPlayId,
-                    shortPlayName: currentDramaData.shortPlayName,
-                    shortPlayCover: currentDramaData.shortPlayCover
-                });
-            }
-            
+            if (existsIndex > -1) favs.splice(existsIndex, 1);
+            else favs.push({ shortPlayId: currentDramaData.shortPlayId, shortPlayName: currentDramaData.shortPlayName, shortPlayCover: currentDramaData.shortPlayCover });
             localStorage.setItem('albedonext_favs', JSON.stringify(favs));
             refreshFavButton();
         }
@@ -332,7 +262,6 @@
             let favs = JSON.parse(localStorage.getItem('albedonext_favs') || '[]');
             const exists = favs.find(f => f.shortPlayId === currentDramaData.shortPlayId);
             const btn = document.getElementById('btnFav');
-            
             if (exists) {
                 btn.innerHTML = '💔 Hapus Favorit';
                 btn.classList.replace('bg-pink-600', 'bg-slate-600');
